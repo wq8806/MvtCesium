@@ -1,0 +1,13 @@
+//This file is automatically rebuilt by the Cesium build process.
+define(function() {
+    'use strict';
+    return "attribute vec4 position;\n\
+attribute vec3 cubeMapCoordinates;\n\
+varying vec3 v_cubeMapCoordinates;\n\
+void main()\n\
+{\n\
+gl_Position = position;\n\
+v_cubeMapCoordinates = cubeMapCoordinates;\n\
+}\n\
+";
+});

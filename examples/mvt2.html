@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mapbox Vector Tiles</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <!--<script src="./js/openlayers4mvt/ol-debug4.3.js"></script>-->
+    <!--<script src="./js/openlayers4mvt/mapbox-streets-v6-style.js"></script>-->
+    <script type="text/javascript" src="./js/require.min.js" data-main="./js/main"></script>
+    <!--<script type="text/javascript" src="./js/openlayers4mvt/olms.js"></script>-->
+    <!--<script type="text/javascript" src="./js/imageryproviders/mvt.js"></script>-->
+
+    <style>
+      .map {
+        background: #f8f4f0;
+        height:100px;
+        width:100px;
+      }
+    </style>
+  </head>
+  <body>
+  <div>
+    <button id="addVec" style="position: absolute;z-index: 9999;top: 10px;left: 10px;background: red;width: 100px;height: 18px">
+      添加矢量瓦片
+    </button>
+
+    <button id="showVec" style="position: absolute;z-index: 9999;top: 10px;left: 200px;background: red;width: 100px;height: 18px">
+      显隐矢量瓦片
+    </button>
+
+    <button id="showPOI1" style="position: absolute;z-index: 9999;top: 10px;left: 400px;background: red;width: 100px;height: 18px">
+      显隐POI1
+    </button>
+    <button id="showPOI2" style="position: absolute;z-index: 9999;top: 10px;left: 600px;background: red;width: 100px;height: 18px">
+      显隐POI2
+    </button>
+  </div>
+        <div id="cesiumContainer"></div>
+    <script>
+      function onload(Cesium) {
+          var topResolution = 360.0 / 512;
+          var res1 = [];
+          for (var zoom = 0; zoom < 18; zoom++) {
+              res1.push(topResolution / Math.pow(2, zoom));
+          }
+
+          var vectorlayer = new ol.layer.VectorTile({
+
+          });
+          var glStyleGlobal ;
+          var mvtLayer;
+          fetch("http://10.18.1.139:8089/egis/base/v1/wvts/styles/1").then(function(response) {
+              response.json().then(function (glStyle) {
+                  console.log(glStyle)
+                  glStyleGlobal = glStyle;
+                  // var url = "https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6/{z}/{x}/{y}.vector.pbf?access_token={k}";
+                  var url = "http://10.18.1.139:8089/egis/base/v1/wvts/tiles/11/{z}/{x}/{y}.pbf";
+                  // var key = 'pk.eyJ1IjoiYWhvY2V2YXIiLCJhIjoiRk1kMWZaSSJ9.E5BkluenyWQMsBLsuByrmg';
+                  var key = 'pk.eyJ1IjoibXV5YW8xOTg3IiwiYSI6ImNpcm9ueHd6cjAwNzZoa20xazY1aWlubjIifQ.5tLtC5j1rh8Eqjlyrq3OaA';
+                  mvtLayer = new Cesium.MapboxVectorTileProvider({
+                      url:url,
+                      key:key,
+                      projection:"4326",
+                      glStyle:glStyle,
+                      resolutions:res1,
+                      styleFun:Cesium.olms.stylefunction(glStyle, 'china_1-10', res1)   //'china_1-10'  12 POIS2
+                  });
+                 /* mvtLayer = createMVTWithStyle(Cesium,ol,createMapboxStreetsV6Style,{
+                      url:url,
+                      key:key,
+                      glStyle:glStyle,
+                      resolutions:res1,
+                      stFun:olms.stylefunction(glStyle, POIS2, res1)   //'china_1-10'
+                  });*/
+                   /*var viewer = new Cesium.Viewer('cesiumContainer', {
+                      imageryProvider :mvtLayer,
+                      baseLayerPicker : false
+                  });*/
+              });
+          })
+
+         /* var viewer = new Cesium.Viewer('cesiumContainer', {
+              imageryProvider :mvtLayer,
+              baseLayerPicker : false
+          });*/
+          var viewer = new Cesium.Viewer('cesiumContainer',{
+              imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+                  layer: "img",
+                  style: " default",
+                  maximumLevel: 18,
+                  tileMatrixSetID: "c",
+                  tilingScheme: new Cesium.GeographicTilingScheme(),
+                  format: 'tiles',
+                  tileMatrixLabels: ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","17"],
+                  url:  "http://10.18.1.139:8089/egis/base/v1/wmts",
+                  subdomains:  ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+              }),
+              baseLayerPicker : false
+          });
+          // viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //60,172,231
+          // viewer.scene.globe.baseColor = new Cesium.Color(60/255,172/255,231/255,1.0);  //60,172,231
+          viewer.camera.flyTo({
+              destination: Cesium.Cartesian3.fromDegrees(109.17780920863152, 28.45981813967228,850)
+          });
+
+          var scene = viewer.scene;
+
+          document.getElementById("addVec").onclick = function () {
+              var vecTileLayer = new Cesium.ImageryLayer(mvtLayer);
+              scene.imageryLayers.add(vecTileLayer);
+              // scene.imageryLayers.addImageryProvider(mvtLayer);
+              // viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //60,172,231
+          }
+
+          document.getElementById("showVec").onclick = function () {
+              console.log(mvtLayer);
+              console.log(scene.imageryLayers);
+              var imagelayers = scene.imageryLayers;
+              imagelayers.get(1).show = !imagelayers.get(1).show;
+              //scene.imageryLayers.addImageryProvider(mvtLayer);
+              // viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //171,198,239
+          }
+
+          var version = Cesium.VERSION;
+          // console.log('Version is ' + version);
+
+          var POIS1 = [];
+          for(var i=776;i<=800;i++){
+              POIS1.push(""+i);
+          }
+
+          var POIS2 = [];
+          for(var i=801;i<=884;i++){
+              POIS2.push(""+i);
+          }
+
+          //控制poi1
+          var showPOI1Obj = document.getElementById("showPOI1");
+          var isShowPOI1 = false;
+          showPOI1Obj.onclick = function () {
+              isShowPOI1 = !isShowPOI1;
+              var veclayer = scene.imageryLayers.get(1);
+              //veclayer.show = false;
+              // veclayer.imageryProvider._stFun = olms.stylefunction(glStyleGlobal, POIS1, res1);
+              // veclayer.imageryProvider.reload();
+              //veclayer.show = true;
+              if(!isShowPOI1){
+                  var styleFun2 = Cesium.olms.stylefunction(glStyleGlobal, POIS2, res1);
+                  veclayer.imageryProvider.setStyleFun(styleFun2);
+                  // veclayer.imageryProvider.reload();
+              }else{
+                  var styleFun1 = Cesium.olms.stylefunction(glStyleGlobal, POIS1, res1);
+                  veclayer.imageryProvider.setStyleFun(styleFun1);
+                  /*veclayer.imageryProvider._styleFun = Cesium.olms.stylefunction(glStyleGlobal, POIS1, res1);
+                  veclayer.imageryProvider.reload();*/
+              }
+          }
+
+          //控制poi1
+          var showPOI1Obj2 = document.getElementById("showPOI2");
+          var isShowPOI2 = true;
+          showPOI1Obj2.onclick = function () {
+              isShowPOI2 = !isShowPOI2;
+              var imagelayers = scene.imageryLayers;
+              imagelayers.remove(imagelayers.get(1));
+              if(!isShowPOI2){
+
+                  /*fetch("http://10.18.1.185/api/v1/styles/1").then(function(response) {   //http://10.18.1.139:8089/egis/base/v1/wvts/styles/1
+                      response.json().then(function(glStyle) {
+                          console.log(glStyle)
+
+                          stylefunction(layer2, glStyle, POIS2, res1);
+                      });
+                  });*/
+              }else{
+                  /*fetch("http://10.18.1.185/api/v1/styles/1").then(function(response) {   //http://10.18.1.139:8089/egis/base/v1/wvts/styles/1
+                      response.json().then(function(glStyle) {
+                          console.log(glStyle)
+
+                          stylefunction(layer2, glStyle, POIS2, res1);
+                      });
+                  });*/
+
+              }
+          }
+
+
+
+    };
+    </script>
+  </body>
+</html>

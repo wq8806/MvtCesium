@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mapbox Vector Tiles</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <!--<script src="./js/openlayers4mvt/ol-debug4.3.js"></script>-->
+    <!--<script src="./js/openlayers4mvt/mapbox-streets-v6-style.js"></script>-->
+    <script type="text/javascript" src="./js/require.min.js" data-main="./js/main"></script>
+    <!--<script type="text/javascript" src="./js/openlayers4mvt/olms.js"></script>-->
+    <!--<script type="text/javascript" src="./js/imageryproviders/mvt.js"></script>-->
+
+    <style>
+      .map {
+        background: #f8f4f0;
+        height:100px;
+        width:100px;
+      }
+    </style>
+  </head>
+  <body>
+        <div id="cesiumContainer"></div>
+    <script>
+      function onload(Cesium) {
+
+          var url = "https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v6/{z}/{x}/{y}.vector.pbf?access_token={k}";
+          // var url = "http://10.18.1.139:8089/egis/base/v1/wvts/tiles/12/{z}/{x}/{y}.pbf";
+          var key = 'pk.eyJ1IjoibXV5YW8xOTg3IiwiYSI6ImNpcm9ueHd6cjAwNzZoa20xazY1aWlubjIifQ.5tLtC5j1rh8Eqjlyrq3OaA';
+          mvtLayer = new Cesium.MapboxVectorTileProvider({
+              url:url,
+              key:key,
+              projection:"EPSG:3857",
+              //glStyle:glStyle,
+              // resolutions:res1,
+              //stFun:Cesium.olms.stylefunction(glStyle, POIS2, res1)   //'china_1-10'
+          })
+
+          var viewer = new Cesium.Viewer('cesiumContainer', {
+              imageryProvider :mvtLayer,
+              baseLayerPicker : false
+          });
+          viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);
+
+          // viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //60,172,231
+          // viewer.scene.globe.baseColor = new Cesium.Color(60/255,172/255,231/255,1.0);  //60,172,231
+
+    };
+    </script>
+  </body>
+</html>
