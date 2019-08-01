@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mapbox Vector Tiles</title>
+    <link href="../Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <!--<script src="./js/openlayers4mvt/ol-debug4.3.js"></script>-->
+    <!--<script src="./js/openlayers4mvt/mapbox-streets-v6-style.js"></script>-->
+    <script type="text/javascript" src="./js/require.min.js" data-main="./js/main"></script>
+    <!--<script type="text/javascript" src="./js/openlayers4mvt/olms.js"></script>-->
+    <!--<script type="text/javascript" src="./js/imageryproviders/mvt.js"></script>-->
+
+    <style>
+      .map {
+        background: #f8f4f0;
+        height:100px;
+        width:100px;
+      }
+      @font-face {
+        　　font-family: "simhei";
+        　　src: url('http://localhost:63342/simhei.ttf');
+      }
+    </style>
+  </head>
+  <body>
+  <div>
+    <button id="addVec" style="position: absolute;z-index: 9999;top: 10px;left: 10px;background: red;width: 100px;height: 18px">
+      添加矢量瓦片
+    </button>
+
+    <button id="showVec" style="position: absolute;z-index: 9999;top: 10px;left: 200px;background: red;width: 100px;height: 18px">
+      显隐矢量瓦片
+    </button>
+
+    <button id="showPOI1" style="position: absolute;z-index: 9999;top: 10px;left: 400px;background: red;width: 100px;height: 18px">
+      显隐POI1
+    </button>
+    <button id="showPOI2" style="position: absolute;z-index: 9999;top: 10px;left: 600px;background: red;width: 100px;height: 18px">
+      显隐POI2
+    </button>
+  </div>
+        <div id="cesiumContainer"></div>
+    <script>
+      function onload(Cesium) {
+          var topResolution = 360.0 / 512;
+          var res1 = [];
+          for (var zoom = 0; zoom < 18; zoom++) {
+              res1.push(topResolution / Math.pow(2, zoom));
+          }
+
+
+          var glStyleGlobal ;
+          var mvtLayer;
+          fetch("./sprite.json").then(function (data) {
+              data.json().then(function (sprites) {
+                  console.log(sprites);
+                  fetch("./style1.json").then(function(response){
+                      response.json().then(function (glStyle){
+                          var url = "http://localhost:8080/map/api/v1/tiles/11/{z}/{x}/{y}.pbf";
+                          var veclayer1 = new Cesium.MapboxVectorTileProvider({
+                              url:url,
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'china_1-10', res1,sprites,"http://localhost:8080/map/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+
+                          var viewer = new Cesium.Viewer('cesiumContainer', {
+                              imageryProvider :veclayer1,
+                              baseLayerPicker : false
+                          });
+                          viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //60,172,231
+
+                          /*var veclayer2 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/12/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'poi', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer3 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/13/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'lrdl', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer4 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/14/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'other', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer5 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/15/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'subp', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer6 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/16/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, 'lfcp', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer7 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/21/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, '省市县乡村注记', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+                          var veclayer8 = new Cesium.MapboxVectorTileProvider({
+                              url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/22/{z}/{x}/{y}.pbf",
+                              projection:"4326",
+                              glStyle:glStyle,
+                              resolutions:res1,
+                              styleFun:Cesium.olms.stylefunction(glStyle, '全国省市县乡', res1,sprites,"http://10.18.1.185:80/api/v1/sprites/1/sprite.png")   //'china_1-10'
+                          });
+
+                          var imagelayers = viewer.scene.imageryLayers;
+                          imagelayers.addImageryProvider(veclayer2);
+                          imagelayers.addImageryProvider(veclayer3);
+                          imagelayers.addImageryProvider(veclayer4);
+                          imagelayers.addImageryProvider(veclayer5);
+                          imagelayers.addImageryProvider(veclayer6);
+                          imagelayers.addImageryProvider(veclayer7);
+                          imagelayers.addImageryProvider(veclayer8);*/
+                      })
+                  })
+              })
+          })
+
+    };
+    </script>
+  </body>
+</html>

@@ -254,9 +254,9 @@ define(['../Core/defaultValue','../Core/defined','../Core/DeveloperError','../Co
                         // var extent = [90,0,180,90];
                         // var _replayGroup = new ol.render.canvas.ReplayGroup(0, extent, 8,true,100);
                         //避让方法
-                        // var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,that._layerRenderer.declutterTree_,100);
+                        var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,that._layerRenderer.declutterTree_,100);
                         //不避让方法
-                        var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,null,100);
+                        // var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,null,100);
                         var squaredTolerance = ol.renderer.vector.getSquaredTolerance(8, window.devicePixelRatio);
 
                         for(var i=0;i<features.length;i++){
