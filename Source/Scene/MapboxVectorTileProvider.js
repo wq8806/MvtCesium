@@ -44,6 +44,7 @@ define(['../Core/defaultValue','../Core/defined','../Core/DeveloperError','../Co
 
         var projection = ol.proj.get('EPSG:4326');
         projection.setExtent([-180,-90,180,90]);
+        this._projection = projection;
         this._vectorLayer = new ol.layer.VectorTile({
             declutter:true,
             source: new ol.source.VectorTile({
@@ -236,22 +237,40 @@ define(['../Core/defaultValue','../Core/defined','../Core/DeveloperError','../Co
             else{
                 var that = this;
                 var url = this._url;
-                url = url.replace('{x}', x).replace('{y}', y).replace('{z}', level).replace('{k}', this._key);
-                var tilerequest = function(x,y,z){
+                url = url.replace('{x}', x).replace('{y}', y ).replace('{z}', level).replace('{k}', this._key);
+                /*var tilerequest = */return function(x,y,z){
                     var resource = Resource.createIfNeeded(url);
 
                     return resource.fetchArrayBuffer().then(function(arrayBuffer) {
                         var canvas = document.createElement('canvas');
                         canvas.width = 512;
                         canvas.height = 512;
+                        canvas.xMvt = x;
+                        canvas.yMvt = y;
+                        canvas.zMvt = z;
                         var vectorContext = canvas.getContext('2d');
 
                         var features = that._mvtParser.readFeatures(arrayBuffer);
 
+                        var tile = that._layerRenderer.getTile(z,x,y,window.devicePixelRatio,that._projection);
+                        // debugger
+                        // tile.getProjection();
+                        var tileProjection = new ol.proj.Projection({
+                            code:'',
+                            units:'tile-pixels',
+                            worldExtent:[-180,-90,-90,0],
+                            extent:[0,0,4096,4096]
+                        })
+                        // tileProjection.setCode('');
+                        /*tileProjection.setWorldExtent([-180,0,-90,90])
+                        tileProjection.setExtent([0,0,4096,4096]);*/
+
+                        that._layerRenderer.declutterTree_.clear();
                         var styleFun = that._stFun(that._glStyle);
 
                         var extent = [0,0,4096,4096];
-                        // var extent = [90,0,180,90];
+                        // var extent = [-90, 0, 0, 90];
+                        // that._transform = [3.5555555555555554, 0, 0, -3.5555555555555554, 640, 622.25];
                         // var _replayGroup = new ol.render.canvas.ReplayGroup(0, extent, 8,true,100);
                         //避让方法
                         var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,that._layerRenderer.declutterTree_,100);
@@ -259,42 +278,79 @@ define(['../Core/defaultValue','../Core/defined','../Core/DeveloperError','../Co
                         // var _replayGroup = new ol.render.canvas.ReplayGroup(0,extent,8,window.devicePixelRatio,true,null,100);
                         var squaredTolerance = ol.renderer.vector.getSquaredTolerance(8, window.devicePixelRatio);
 
-                        for(var i=0;i<features.length;i++){
-                            var feature = features[i];
-                            var styles;
-                            if(!that._styleFun){
-                                styles = styleFun(features[i],that._resolutions[level]);
-                            }else{
-                                var style_olms = that._styleFun(features[i],that._resolutions[level]);
-                                styles = styleFun(features[i],that._resolutions[level],style_olms);
+                        try {
+                            var tempArr = [];
+                            for(var i=0;i<features.length;i++){
+                                var feature = features[i];
+                                // feature.getGeometry().transform(tileProjection, that._projection);
+                                var transformation ={
+                                    tileProjection : tileProjection,
+                                    mapProjection : that._projection,
+                                    isTransformed : false,
+                                    transform :  function (feature) {
+                                        if(!this.isTransformed){
+                                            this.isTransformed = true;
+                                            feature.getGeometry().transform(this.tileProjection, this.mapProjection)
+                                        }
+                                    }
+                                }
+                                feature.transformation = transformation;
+                                var styles;
+                                if(!that._styleFun){
+                                    styles = styleFun(features[i],that._resolutions[level]);
+                                }else{
+                                    var style_olms = that._styleFun(features[i],that._resolutions[level]);
+                                    styles = styleFun(features[i],that._resolutions[level],style_olms);
+                                }
+                                var declutterReplays = that._vectorLayer.getDeclutter() ? {} : null;
+                                for(var j=0;j<styles.length;j++)
+                                {
+                                    //if(!!styles[j].getText() && styles[j].getText().getText()){
+                                        //ol.renderer.vector.renderFeature(_replayGroup, feature, styles[j],squaredTolerance);
+                                    //}else{
+                                    if(feature.properties_.layer == 'ALRDL_C' && feature.properties_.ROUTENUM !== "" && !!styles[j].getImage() && !!styles[j].getText()){
+                                        /*console.log(feature)
+                                        if(feature.flatCoordinates_.length == 2){
+                                            console.log(feature)
+                                        }*/
+                                        tempArr.push(feature);
+                                        if(tempArr.length > 15)
+                                            continue
+                                    }
+                                        ol.renderer.vector.renderFeature(_replayGroup, feature, styles[j],squaredTolerance);
+                                    //}
+                                }
                             }
-                            var declutterReplays = that._vectorLayer.getDeclutter() ? {} : null;
-                            for(var j=0;j<styles.length;j++)
-                            {
-                                // ol.renderer.vector.renderFeature_(_replayGroup, feature, styles[j],16);
-                                ol.renderer.vector.renderFeature(_replayGroup, feature, styles[j],squaredTolerance);
-                            }
-                        }
-                        _replayGroup.finish();
+                            _replayGroup.finish();
 
-                        var declutterReplays = {};
-                        // _replayGroup.replay(vectorContext, that._pixelRatio, that._transform, 0, {}, that._replays, true);
-                        _replayGroup.replay(vectorContext,that._transform, 0, {}, true,that._replays, declutterReplays);
-                        if(Object.keys(declutterReplays).length / 2 > 0){
-                            /*var decluterReplayArr = [];
-                            for(var i in declutterReplays) {
-                                decluterReplayArr = decluterReplayArr.concat(declutterReplays[i]);
+                            var declutterReplays = {};
+                            // _replayGroup.replay(vectorContext, that._pixelRatio, that._transform, 0, {}, that._replays, true);
+                            _replayGroup.replay(vectorContext,that._transform, 0, {}, false,that._replays, declutterReplays);
+                            if(Object.keys(declutterReplays).length / 2 > 0){
+                                var decluterReplayArr = [];
+                                for(var i in declutterReplays) {
+                                    decluterReplayArr = decluterReplayArr.concat(declutterReplays[i]);
+                                }
+                                // console.log(decluterReplayArr);
+                                var declutterReplays1 = {
+                                    0:decluterReplayArr
+                                }
+                                ol.render.canvas.ReplayGroup.replayDeclutter(declutterReplays, vectorContext, 0, false)
                             }
-                            console.log(decluterReplayArr);*/
-                            ol.render.canvas.ReplayGroup.replayDeclutter(declutterReplays, vectorContext, 0, true)
+                            // ol.render.canvas.ReplayGroup.replayDeclutter(declutterReplays, vectorContext, 0, true)
+
+                        }catch (e) {
+                            console.error(e);
                         }
+
+
                         if(that._tileQueue.count>that._cacheSize){
                             trimTiles(that._tileQueue,that._cacheSize/2);
                         }
 
-                        canvas.xMvt = x;
+                        /*canvas.xMvt = x;
                         canvas.yMvt = y;
-                        canvas.zMvt = z;
+                        canvas.zMvt = z;*/
                         that._tileQueue.markTileRendered(canvas);
 
                         delete _replayGroup;
@@ -305,6 +361,7 @@ define(['../Core/defaultValue','../Core/defined','../Core/DeveloperError','../Co
                     });
 
                 }(x,y,level);
+                // return document.createElement('canvas');
             }
         };
 

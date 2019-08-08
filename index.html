@@ -40,6 +40,12 @@
     </button>
   </div>
         <div id="cesiumContainer"></div>
+  <canvas id="myCanvas" width="512" height="512" style="border:1px solid #d3d3d3;">
+  </canvas>
+  <canvas id="myCanvas1" width="512" height="512" style="border:1px solid #d3d3d3;">
+  </canvas>
+  <div id = "myCanvas2"></div>
+  <div id = "myCanvas3"></div>
     <script>
       function onload(Cesium) {
           var topResolution = 360.0 / 512;
@@ -70,7 +76,13 @@
                               baseLayerPicker : false
                           });
                           viewer.scene.globe.baseColor = new Cesium.Color(1.0,1.0,1.0,1.0);  //60,172,231
+                          var tilecoord = new Cesium.TileCoordinatesImageryProvider();
+                          viewer.scene.imageryLayers.addImageryProvider(tilecoord);
 
+                          viewer.scene.globe.maximumScreenSpaceError = 1.5;
+                          viewer.resolutionScale = window.devicePixelRatio;
+                          viewer.scene.postProcessStages.fxaa.enabled = false;
+                          viewer.scene.morphTo2D();
                           /*var veclayer2 = new Cesium.MapboxVectorTileProvider({
                               url:"http://10.18.1.139:8089/egis/base/v1/wvts/tiles/12/{z}/{x}/{y}.pbf",
                               projection:"4326",
